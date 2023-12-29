@@ -1,9 +1,11 @@
 package com.fernandez.basketball.resultsq.dto;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
-public class Result {
+@Accessors(chain = true)
+public class ResultDTO {
     private String home;
     private String away;
 }

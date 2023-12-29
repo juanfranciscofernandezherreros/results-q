@@ -1,6 +1,9 @@
 package com.fernandez.basketball.resultsq.repository;
 
-import com.fernandez.basketball.resultsq.dto.Match;
+import com.fernandez.basketball.resultsq.dao.ResultsDAO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -14,18 +17,21 @@ import java.util.List;
 import java.util.Map;
 
 @Repository
-public class CustomMatchRepositoryImpl {
-    private final MongoTemplate mongoTemplate;
-    public CustomMatchRepositoryImpl(MongoTemplate mongoTemplate) {
+public class ResultsRepositoryImpl {
+    public final MongoTemplate mongoTemplate;
+    public ResultsRepositoryImpl(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
 
-    public List<Match> findAllByDynamicCriteria(Map<String, String> dynamicCriteria) {
+    public Page<ResultsDAO> findAllByDynamicCriteriaWithPagination(Map<String, String> dynamicCriteria, int page, int size) {
         Query query = buildQuery(dynamicCriteria);
-        return mongoTemplate.find(query, Match.class);
+        long count = mongoTemplate.count(query, ResultsDAO.class);
+        query.with(PageRequest.of(page, size));
+        List<ResultsDAO> resultList = mongoTemplate.find(query, ResultsDAO.class);
+        return new PageImpl<>(resultList, PageRequest.of(page, size), count);
     }
 
-    private Query buildQuery(Map<String, String> dynamicCriteria) {
+    public Query buildQuery(Map<String, String> dynamicCriteria) {
         Query query = new Query();
         List<Criteria> dateCriterias = new ArrayList<>();
         for (Map.Entry<String, String> entry : dynamicCriteria.entrySet()) {
@@ -50,19 +56,19 @@ public class CustomMatchRepositoryImpl {
         return query;
     }
 
-    private boolean isFechaInicioField(String fieldName) {
+    public boolean isFechaInicioField(String fieldName) {
         return fieldName.contains("fechaInicio");
     }
 
-    private boolean isFechaFinField(String fieldName) {
+    public boolean isFechaFinField(String fieldName) {
         return fieldName.contains("fechaFin");
     }
 
-    private boolean isFechaSpecific(String fieldName) {
+    public boolean isFechaSpecific(String fieldName) {
         return fieldName.contains("fechaEspecifica");
     }
 
-    private Criteria buildDateCriteria(String fieldName, String value, String operator) {
+    public Criteria buildDateCriteria(String fieldName, String value, String operator) {
         try {
             Date parsedDate = parseDateString(value);
 
@@ -81,7 +87,7 @@ public class CustomMatchRepositoryImpl {
         }
     }
 
-    private Date parseDateString(String value) throws ParseException {
+    public Date parseDateString(String value) throws ParseException {
         SimpleDateFormat sdfInput = new SimpleDateFormat("dd.MM.yyyy");
         return sdfInput.parse(value);
     }
